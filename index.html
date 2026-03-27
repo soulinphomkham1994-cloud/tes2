@@ -1,155 +1,395 @@
 <!DOCTYPE html>
-<html>
+<html lang="lo">
 <head>
-  <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MS SPORT - Production Status Scanner</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-      text-align: center;
-      padding: 40px;
+    :root{
+      --bg-1:#0f1115;
+      --bg-2:#161922;
+      --card:#1b1f2a;
+      --card-2:#202635;
+      --line:rgba(255,255,255,.09);
+      --text:#f4f7fb;
+      --muted:rgba(244,247,251,.72);
+      --muted-2:rgba(244,247,251,.5);
+      --red:#e60000;
+      --red-glow:rgba(230,0,0,.35);
+      --success:#23c483;
+      --success-glow:rgba(35,196,131,.25);
+      --radius:22px;
+      --radius-sm:14px;
     }
 
-    h2 {
-      margin-bottom: 20px;
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body{
+      font-family:'Noto Serif Lao', serif;
+      background:linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      overflow-x:hidden;
+      line-height:1.5;
     }
 
-    .search-box {
-      margin-bottom: 30px;
-    }
+    .app-shell{ width:100%; max-width:1040px; margin:0 auto; padding:16px 16px 100px; flex:1; }
+    header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; padding:4px 8px; }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo-box{ width:42px; height:42px; background:var(--red); border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px var(--red-glow); }
+    .brand h1{ font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .brand span{ color:var(--red); }
 
-    input {
-      padding: 12px;
-      width: 260px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; position:relative; overflow:hidden; }
+    .scanner-container{ position:relative; width:100%; aspect-ratio:1/1; max-height:480px; background:#000; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--line); }
+    #reader{ width:100% !important; height:100% !important; border:none !important; }
 
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      background-color: #2e7d32;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
+    .status-bar{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .stat-item{ background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; display:flex; align-items:center; gap:10px; }
+    .stat-icon{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .stat-val{ font-size:18px; font-weight:700; }
+    .stat-label{ font-size:12px; color:var(--muted); display:block; }
 
-    button:hover {
-      background-color: #1b5e20;
+    .control-group{ margin-bottom:20px; }
+    .label{ font-size:13px; font-weight:600; color:var(--muted); margin:0 0 8px 4px; display:flex; align-items:center; gap:6px; }
+    select, input[type="text"]{
+      width:100%; background:var(--card-2); border:1px solid var(--line); border-radius:16px; padding:14px 18px; color:#fff; font-family:inherit; font-size:16px; transition:all .2s; outline:none;
     }
+    select:focus, input[type="text"]:focus{ border-color:var(--red); box-shadow:0 0 0 4px var(--red-glow); }
 
-    .loading {
-      margin-top: 20px;
-      font-weight: bold;
-      color: #555;
+    .btn-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+    .btn{
+      border:none; border-radius:16px; padding:14px; font-family:inherit; font-weight:700; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s;
     }
+    .btn-main{ background:var(--red); color:#fff; box-shadow:0 4px 15px var(--red-glow); }
+    .btn-sec{ background:var(--card-2); color:#fff; border:1px solid var(--line); }
+    .btn:active{ transform:scale(.97); opacity:.9; }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
 
-    .error {
-      color: red;
-      margin-top: 20px;
-      font-weight: bold;
-    }
+    #result-area{ margin-top:16px; min-height:80px; display:flex; align-items:center; justify-content:center; text-align:center; border-radius:var(--radius-sm); border:1px dashed var(--line); transition:all .3s; }
+    .res-content h4{ font-size:14px; color:var(--muted); margin-bottom:4px; }
+    .res-content p{ font-size:20px; font-weight:700; }
+    .success-ui{ background:var(--success-glow); border-color:var(--success) !important; color:var(--success); }
+    .error-ui{ background:rgba(230,0,0,.1); border-color:var(--red) !important; color:var(--red); }
+    .hidden{ display:none; }
 
-    table {
-      margin: 30px auto;
-      border-collapse: collapse;
-      width: 90%;
-      max-width: 900px;
-      background: white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+    .history-header{ display:flex; align-items:center; justify-content:space-between; margin:8px 0 12px; padding:0 4px; }
+    .history-item{ background:rgba(255,255,255,.02); padding:12px 16px; border-radius:14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); }
+    .hist-info h5{ font-size:15px; font-weight:600; margin-bottom:2px; }
+    .hist-info span{ font-size:12px; color:var(--muted); }
+    .badge{ padding:4px 10px; border-radius:8px; font-size:11px; font-weight:700; text-transform:uppercase; }
+    .badge-success{ background:var(--success-glow); color:var(--success); }
+    .badge-error{ background:rgba(230,0,0,.1); color:var(--red); }
 
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    th {
-      background-color: #2e7d32;
-      color: white;
-    }
-
+    .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:#fff; color:#000; padding:12px 24px; border-radius:30px; font-weight:700; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity:0; }
+    .toast.show{ transform:translateX(-50%) translateY(0); opacity:1; }
   </style>
 </head>
-
 <body>
 
-  <h2>ລະບົບຕິດຕາມການຜະລິດເສື້ອພິມລາຍ ເອັມເອັສ໌ ສປອດ</h2>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <div class="logo-box"><i class="fas fa-bolt"></i></div>
+        <h1>MS <span>SPORT</span></h1>
+      </div>
+      <button class="btn btn-sec" id="clearBtn" style="padding:8px 12px; font-size:13px;"><i class="fas fa-trash-alt"></i></button>
+    </header>
 
-  <div class="search-box">
-    <input type="text" id="invoice" placeholder="ປ້ອນໝາຍເລກ Invoice">
-    <button onclick="search()">ຕິດຕາມເຄື່ອງ</button>
+    <div class="status-bar">
+      <div class="stat-item">
+        <div class="stat-icon" style="background:var(--success-glow); color:var(--success);"><i class="fas fa-check-circle"></i></div>
+        <div>
+          <span class="stat-val" id="count-ok">0</span>
+          <span class="stat-label">ສຳເລັດ</span>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background:rgba(230,0,0,.1); color:var(--red);"><i class="fas fa-exclamation-triangle"></i></div>
+        <div>
+          <span class="stat-val" id="count-err">0</span>
+          <span class="stat-label">ຜິດພາດ</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="scanner-container">
+        <div id="reader"></div>
+      </div>
+      
+      <div class="btn-grid">
+        <button class="btn btn-main" id="startBtn"><i class="fas fa-camera"></i> ເປີດກ້ອງ</button>
+        <button class="btn btn-sec" id="stopBtn" disabled><i class="fas fa-stop"></i> ຢຸດ</button>
+      </div>
+      <div class="btn-grid" style="margin-top:8px; grid-template-columns: 1fr 1fr;">
+        <button class="btn btn-sec" id="switchBtn"><i class="fas fa-sync"></i> ປ່ຽນກ້ອງ</button>
+        <button class="btn btn-sec" id="uploadBtn"><i class="fas fa-image"></i> ເລືອກຮູບ</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <div class="card">
+      <div class="control-group">
+        <div class="label"><i class="fas fa-tasks"></i> ເລືອກສະຖານະ</div>
+        <select id="statusSelect">
+          <option value="ກຳລັງດຳເນີນການ">ກຳລັງດຳເນີນການ</option>
+          <option value="ກຳລັງຕັດ-ຫຍิບ">ກຳລັງຕັດ-ຫຍິບ</option>
+          <option value="ຈັດສົ່ງສຳເລັດແລ້ວ">ຈັດສົ່ງສຳເລັດແລ້ວ</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <div class="label"><i class="fas fa-barcode"></i> ປ້ອນເລກບິນດ້ວຍມື</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="manualInput" placeholder="INV-XXXXX" autocomplete="off">
+          <button class="btn btn-sec" id="pasteBtn" style="width:54px;"><i class="fas fa-paste"></i></button>
+        </div>
+      </div>
+
+      <button class="btn btn-main" id="saveBtn" style="width:100%; height:56px; font-size:17px;">
+        <i class="fas fa-save"></i> ບັນທຶກຂໍ້ມູນ
+      </button>
+
+      <div id="result-area">
+        <div class="res-content" id="res-default">
+          <i class="fas fa-qrcode" style="font-size:24px; color:var(--line); margin-bottom:8px;"></i>
+          <p style="font-size:14px; color:var(--muted); font-weight:400;">ພ້ອມສະແກນ ຫຼື ປ້ອນຂໍ້ມູນ</p>
+        </div>
+        <div class="res-content hidden" id="res-active">
+          <h4 id="res-title">---</h4>
+          <p id="res-body">---</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-header">
+      <h3 style="font-size:16px;"><i class="fas fa-history" style="color:var(--red);"></i> ປະຫວັດລ່າສຸດ</h3>
+    </div>
+    <div id="history-list"></div>
   </div>
 
-  <div id="message"></div>
-  <div id="result"></div>
+  <div id="toast" class="toast">ບັນທຶກສຳເລັດ</div>
 
   <script>
-    // กด Enter เพื่อค้นหา
-    document.getElementById("invoice")
-      .addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-          search();
+    const state = {
+      running: false,
+      busy: false,
+      scanner: null,
+      cameras: [],
+      cameraIndex: 0,
+      successCount: 0,
+      errorCount: 0,
+      history: []
+    };
+
+    const els = {
+      startBtn: document.getElementById('startBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      switchBtn: document.getElementById('switchBtn'),
+      uploadBtn: document.getElementById('uploadBtn'),
+      fileInput: document.getElementById('fileInput'),
+      saveBtn: document.getElementById('saveBtn'),
+      pasteBtn: document.getElementById('pasteBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      statusSelect: document.getElementById('statusSelect'),
+      manualInput: document.getElementById('manualInput'),
+      countOk: document.getElementById('count-ok'),
+      countErr: document.getElementById('count-err'),
+      resDefault: document.getElementById('res-default'),
+      resActive: document.getElementById('res-active'),
+      resTitle: document.getElementById('res-title'),
+      resBody: document.getElementById('res-body'),
+      resArea: document.getElementById('result-area'),
+      historyList: document.getElementById('history-list'),
+      toast: document.getElementById('toast')
+    };
+
+    function toast(msg, type='success'){
+      els.toast.innerText = msg;
+      els.toast.style.background = type === 'success' ? '#fff' : '#ff4b4b';
+      els.toast.style.color = type === 'success' ? '#000' : '#fff';
+      els.toast.classList.add('show');
+      setTimeout(() => els.toast.classList.remove('show'), 2500);
+    }
+
+    function updateCounters(){
+      els.countOk.innerText = state.successCount;
+      els.countErr.innerText = state.errorCount;
+    }
+
+    function setResult(title, body, type){
+      els.resDefault.classList.add('hidden');
+      els.resActive.classList.remove('hidden');
+      els.resArea.className = type === 'success' ? 'success-ui' : 'error-ui';
+      els.resTitle.innerText = title;
+      els.resBody.innerText = body;
+    }
+
+    function addToHistory(inv, type, msg){
+      state.history.unshift({ inv, type, msg, time: new Date().toLocaleTimeString() });
+      if(state.history.length > 10) state.history.pop();
+      renderHistory();
+    }
+
+    function renderHistory(){
+      els.historyList.innerHTML = state.history.map(item => `
+        <div class="history-item">
+          <div class="hist-info">
+            <h5>${item.inv}</h5>
+            <span>${item.time} • ${item.msg}</span>
+          </div>
+          <span class="badge ${item.type === 'success' ? 'badge-success' : 'badge-error'}">
+            ${item.type === 'success' ? 'OK' : 'ERR'}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function setButtons(){
+      els.startBtn.disabled = state.running || state.busy;
+      els.stopBtn.disabled = !state.running || state.busy;
+      els.saveBtn.disabled = state.busy;
+      els.uploadBtn.disabled = state.busy;
+    }
+
+    // แก้ไขจุดนี้: เปลี่ยน Path เพื่อให้รันบน Vercel API
+    async function submitStatus(inv, status, source) {
+      if (state.busy) return;
+      state.busy = true;
+      setButtons();
+
+      const done = (ok, detail) => {
+        if (ok) {
+          state.successCount += 1;
+          setResult(`ອັບເດດສຳເລັດ (${source})`, `${inv} → ${status}`, 'success');
+          addToHistory(inv, 'success', status);
+          toast('ບັນທຶກສຳເລັດ', 'success');
+        } else {
+          state.errorCount += 1;
+          setResult('ເກີດຂໍ້ຜິດພາດ', detail || inv, 'error');
+          addToHistory(inv, 'error', detail || 'Backend Error');
+          toast('ບັນທຶກບໍ່ສຳເລັດ', 'error');
         }
-      });
+        state.busy = false;
+        setButtons();
+        updateCounters();
+      };
 
-    function search() {
-      var invoice = document.getElementById("invoice").value.trim();
-      var messageDiv = document.getElementById("message");
-      var resultDiv = document.getElementById("result");
+      try {
+        const response = await fetch('/api/updateStatus', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoice: inv, status: status })
+        });
 
-      resultDiv.innerHTML = "";
-      messageDiv.innerHTML = "";
-
-      if (invoice === "") {
-        messageDiv.innerHTML = "<div class='error'>ກະລູນາປ້ອນໝາຍເລກ Invoice</div>";
-        return;
+        const res = await response.json();
+        done(res.success, res.message);
+      } catch (err) {
+        done(false, "Connection Error: " + err.message);
       }
-
-      messageDiv.innerHTML = "<div class='loading'>ກຳລັງຄົ້ນຫາ...</div>";
-
-      google.script.run
-        .withSuccessHandler(showResult)
-        .searchInvoice(invoice);
     }
 
-    function showResult(data) {
-      var messageDiv = document.getElementById("message");
-      var resultDiv = document.getElementById("result");
+    async function startScanner(){
+      try{
+        if(!state.cameras.length){
+          state.cameras = await Html5Qrcode.getCameras();
+        }
+        if(!state.cameras.length) return toast('ບໍ່ພົບກ້ອງ', 'error');
 
-      messageDiv.innerHTML = "";
+        state.scanner = new Html5Qrcode("reader");
+        state.running = true;
+        setButtons();
 
-      if (!data || !data.found) {
-        messageDiv.innerHTML = "<div class='error'>ບໍ່ພົບຂໍ້ມູນ Invoice ນີ້</div>";
-        return;
+        await state.scanner.start(
+          state.cameras[state.cameraIndex].id,
+          { fps: 15, qrbox: { width: 250, height: 250 } },
+          (text) => {
+            const inv = text.match(/INV[\w-]+/i)?.[0].toUpperCase() || text.trim().toUpperCase();
+            submitStatus(inv, els.statusSelect.value, 'QR');
+          }
+        );
+      } catch (err) {
+        state.running = false;
+        setButtons();
+        toast('ເປີດກ້ອງບໍ່ໄດ້', 'error');
       }
-
-      var tableHTML = `
-        <table>
-          <tr><th>ລຳດັບຄິວ</th><td>${data.A || ""}</td></tr>
-          <tr><th>ວັນໃນປະຕິທິນ</th><td>${data.B || ""}</td></tr>
-          <tr><th>ວັນທີຮັບອໍເດີ</th><td>${data.C || ""}</td></tr>
-          <tr><th>ວັນທີຈັດສົ່ງເຄື່ອງ</th><td>${data.D || ""}</td></tr>
-          <tr><th>Invoice</th><td>${data.E || ""}</td></tr>
-          <tr><th>ສະຖານະຜະລິດ</th><td>${data.F || ""}</td></tr>
-          <tr><th>ຊື່ທີມ</th><td>${data.I || ""}</td></tr>
-          <tr><th>ຈຳນວນທັງໝົດ</th><td>${data.J || ""}</td></tr>
-          <tr><th>ແບບຄໍເສື້ອ</th><td>${data.K || ""}</td></tr>
-          <tr><th>ປະເພດແພເສື້ອ</th><td>${data.L || ""}</td></tr>
-          <tr><th>ຈັດສົ່ງຜ່ານຂົນສົ່ງ</th><td>${data.M || ""}</td></tr>
-        </table>
-      `;
-
-      resultDiv.innerHTML = tableHTML;
     }
+
+    async function stopScanner(){
+      if(state.scanner && state.running){
+        await state.scanner.stop();
+        state.running = false;
+        setButtons();
+      }
+    }
+
+    function saveManual(){
+      const val = els.manualInput.value.trim();
+      if(!val) return toast('ກະລຸນາປ້ອນເລກບິນ', 'error');
+      submitStatus(val.toUpperCase(), els.statusSelect.value, 'MANUAL');
+      els.manualInput.value = '';
+    }
+
+    async function scanFromFile(file){
+      if(!file || state.busy) return;
+      state.busy = true;
+      setButtons();
+      
+      const sc = new Html5Qrcode("reader");
+      try {
+        const text = await sc.scanFile(file, true);
+        const inv = text.match(/INV[\w-]+/i)?.[0].toUpperCase() || text.trim().toUpperCase();
+        await submitStatus(inv, els.statusSelect.value, 'FILE');
+      } catch (err) {
+        toast('ບໍ່ພົບ QR Code ໃນຮູບ', 'error');
+      } finally {
+        state.busy = false;
+        setButtons();
+        els.fileInput.value = '';
+      }
+    }
+
+    async function pasteClipboard(){
+      try{
+        const text = await navigator.clipboard.readText();
+        els.manualInput.value = text.trim();
+        toast('ວາງຂໍ້ຄວາມແລ້ວ', 'success');
+      } catch (err) { toast('ວางບໍ່ໄດ້', 'error'); }
+    }
+
+    function clearAll(){
+      els.manualInput.value = '';
+      state.history = [];
+      state.successCount = 0;
+      state.errorCount = 0;
+      updateCounters();
+      renderHistory();
+      toast('ລ້າງຂໍ້ມູນແລ້ວ', 'success');
+    }
+
+    els.startBtn.addEventListener('click', startScanner);
+    els.switchBtn.addEventListener('click', async () => {
+      if (state.cameras.length <= 1) return toast('ບໍ່ມີກ້ອງອື່น', 'info');
+      state.cameraIndex = (state.cameraIndex + 1) % state.cameras.length;
+      if (state.running) { await stopScanner(); await startScanner(); }
+    });
+    els.stopBtn.addEventListener('click', stopScanner);
+    els.uploadBtn.addEventListener('click', () => els.fileInput.click());
+    els.fileInput.addEventListener('change', e => scanFromFile(e.target.files[0]));
+    els.saveBtn.addEventListener('click', saveManual);
+    els.pasteBtn.addEventListener('click', pasteClipboard);
+    els.clearBtn.addEventListener('click', clearAll);
+
   </script>
-
 </body>
 </html>
