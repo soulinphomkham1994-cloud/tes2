@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      margin-bottom: 30px;
+    }
+
+    input {
+      padding: 12px;
+      width: 260px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #2e7d32;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    button:hover {
+      background-color: #1b5e20;
+    }
+
+    .loading {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .error {
+      color: red;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    table {
+      margin: 30px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 900px;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #2e7d32;
+      color: white;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <h2>ລະບົບຕິດຕາມການຜະລິດເສື້ອພິມລາຍ ເອັມເອັສ໌ ສປອດ</h2>
+
+  <div class="search-box">
+    <input type="text" id="invoice" placeholder="ປ້ອນໝາຍເລກ Invoice">
+    <button onclick="search()">ຕິດຕາມເຄື່ອງ</button>
+  </div>
+
+  <div id="message"></div>
+  <div id="result"></div>
+
+  <script>
+    // กด Enter เพื่อค้นหา
+    document.getElementById("invoice")
+      .addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+          search();
+        }
+      });
+
+    function search() {
+      var invoice = document.getElementById("invoice").value.trim();
+      var messageDiv = document.getElementById("message");
+      var resultDiv = document.getElementById("result");
+
+      resultDiv.innerHTML = "";
+      messageDiv.innerHTML = "";
+
+      if (invoice === "") {
+        messageDiv.innerHTML = "<div class='error'>ກະລູນາປ້ອນໝາຍເລກ Invoice</div>";
+        return;
+      }
+
+      messageDiv.innerHTML = "<div class='loading'>ກຳລັງຄົ້ນຫາ...</div>";
+
+      google.script.run
+        .withSuccessHandler(showResult)
+        .searchInvoice(invoice);
+    }
+
+    function showResult(data) {
+      var messageDiv = document.getElementById("message");
+      var resultDiv = document.getElementById("result");
+
+      messageDiv.innerHTML = "";
+
+      if (!data || !data.found) {
+        messageDiv.innerHTML = "<div class='error'>ບໍ່ພົບຂໍ້ມູນ Invoice ນີ້</div>";
+        return;
+      }
+
+      var tableHTML = `
+        <table>
+          <tr><th>ລຳດັບຄິວ</th><td>${data.A || ""}</td></tr>
+          <tr><th>ວັນໃນປະຕິທິນ</th><td>${data.B || ""}</td></tr>
+          <tr><th>ວັນທີຮັບອໍເດີ</th><td>${data.C || ""}</td></tr>
+          <tr><th>ວັນທີຈັດສົ່ງເຄື່ອງ</th><td>${data.D || ""}</td></tr>
+          <tr><th>Invoice</th><td>${data.E || ""}</td></tr>
+          <tr><th>ສະຖານະຜະລິດ</th><td>${data.F || ""}</td></tr>
+          <tr><th>ຊື່ທີມ</th><td>${data.I || ""}</td></tr>
+          <tr><th>ຈຳນວນທັງໝົດ</th><td>${data.J || ""}</td></tr>
+          <tr><th>ແບບຄໍເສື້ອ</th><td>${data.K || ""}</td></tr>
+          <tr><th>ປະເພດແພເສື້ອ</th><td>${data.L || ""}</td></tr>
+          <tr><th>ຈັດສົ່ງຜ່ານຂົນສົ່ງ</th><td>${data.M || ""}</td></tr>
+        </table>
+      `;
+
+      resultDiv.innerHTML = tableHTML;
+    }
+  </script>
+
+</body>
+</html>
